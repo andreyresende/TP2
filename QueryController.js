@@ -2,6 +2,7 @@ import fs from 'fs'
 //import queryJson from "../../../public/apiRequest/request.json";
 import axios from 'axios'
 import KwicController from "./KwicController";
+import titlesJson from '../../../public/titles/titles.json';
 
 class QueryController {
   async query (req, res) {
@@ -11,37 +12,36 @@ class QueryController {
     const url = "http://dblp.org/search/publ/api?q="+ query +"&format=json"
     //faz um GET para a api e escreve o json obtido em request.json
     const response = await axios.get(url)
-    fs.writeFileSync('public/apiRequest/request.json', JSON.stringify(response.data) + '\n', (err) => {
+    fs.writeFileSync('public/apiRequest/request.json', JSON.stringify(response.data), (err) => {
       if (err) throw err;
     })
     //escreve o filtro de titulos, de inicio zerando o arquivo original titles.txt
-    const path = 'public/titles/titles.txt'
+    const path = 'public/titles/titles.json'
     fs.writeFileSync(path, '', (err) => {
       if (err) throw err;
     })
     const queryJson = response.data
-    var text = ''
+    var text = {};
+    text.array = []
     queryJson.result.hits.hit.forEach((element, index, array) => {
-      fs.appendFileSync(path, element.info.title + '\n', (err) => {
-        if (err) throw err
-      })
-      text += JSON.stringify(element.info.title) + '\n'
+      //text += '"' + index + '": ' + JSON.stringify(element.info.title) + '\n';
+      text.array[index] = element.info.title; 
       //console.log(index + " = " + element.info.title)
-    })
-    const title = text.split('\n')
-    var quantidadeDeTitulos = title.length;
-    KwicController.titleFilter(quantidadeDeTitulos, title);
-    for(var i = 0; i < quantidadeDeTitulos; i++){//Uma iteracao para cada titulo, representado por title[i]
-      var palavras = KwicController.splitWords(title[i]);//palavras = array com as palavras do title[i]
-      var quantidadeDePalavras = palavras.length;
-      console.log("Titulo nº" + i + " possui " + quantidadeDePalavras + " palavras");
-      for(var j = 0; j < quantidadeDePalavras; j++){
-        console.log("Palavra: " + palavras[j]);
-      }
-    }
+    })//Error: Server returned nothing (no headers, no data)
+    //const title = text.split('\n');
+    
+    console.log(text[0])
+    const writeJson = JSON.stringify(text)
+    fs.writeFileSync(path, writeJson)
+    /* var quantidadeDeTitulos = title.length;
     const stopWords = KwicController.loadStopWords();
-    return res.json(title)
+    const a = await KwicController.shifting(title, stopWords); */
+    return res.json({message: 'Check /titles to see all titles'});
   }
 
+  async show(req, res) {
+    return res.json(titlesJson)
+  }
+  
 }
 export default new QueryController()
